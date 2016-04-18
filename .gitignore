@@ -1,0 +1,6 @@
+*.pyc
+/data/
+/data_old/
+.DS_Store
+/sample_data/
+/simple-examples/
