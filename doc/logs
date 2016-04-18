@@ -1,0 +1,23 @@
+Using numpy.logaddexp, no overflow but poor result
+
+with 39 samples
+cost before training 29116.7633912  after training: 29065.9993389
+cost before training 29116.7633912 after adagrad training 27859.4662919
+
+with 149 samples
+cost before training 29117.2729197  after training: 29061.7474761
+cost before training 29117.2729197 after adagrad training 26670.2613526
+
+with 259 samples
+cost before training 29117.459639  after training: 29060.5441801
+cost before training 29117.459639 after adagrad training 26824.9729682
+
+with >500 samples
+cost before training 29116.4052108  after training: 29061.0871446 
+cost before training 29116.4052108 after adagrad training 26628.3929688
+
+Initial training on raw data
+Raw Data Vect. Accuracy for chi1: 0.48 (+/- 0.06)
+Raw Data Vect. Accuracy for chi2: 0.49 (+/- 0.06)
+Raw Data Vect. Accuracy for rmsd: 0.50 (+/- 0.15)
+Raw Data Vect. Accuracy for hbonds: 0.50 (+/- 0.14)

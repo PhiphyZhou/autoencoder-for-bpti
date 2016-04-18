@@ -1,0 +1,46 @@
+Resources:
+-----------
+
+We have 33 machines available for experiments at JHU, in the following topology:
+
+-- damsl.cs.jhu.edu : gateway and file server, with directories (available when cd'ed into on all cluster nodes below):
+ | \++ /damsl/software: please install any software that is not available via a package manager here.
+ | \++ /damsl/projects/: please let Yanif know your data storage needs. We can create you a project directory under here.
+ |
+ |\__ qp1: Ubuntu 12.04 cluster node (Dell R410, 8-core, 32GB RAM), first of six
+ |
+ |\__ qp2
+ |
+ |\__ ...
+ |
+ |\__ qp6
+ |
+ |\__ qp-hm1: High-memory cluster node, Centos 6.4 (Dell CS24-TY, 8-core, 72GB RAM), first of 8
+ |
+ |\__ ...
+ |
+ |\__ qp-hm8
+ |
+ |\__ qp-hd1: High-density cluster node, Centos 6.4 (Dell C6100, 8-core, 24GB RAM), first of 16
+ |
+ |\__ ...
+ |
+ |\__ qp-hd16
+ |
+ |\__ mddb: High-memory DB server, Centos 6.3 (Supermicro custom-built, 64-core, 512GB RAM, 63TB HDD)
+ |   ++ 8-segment Greenplum parallel database
+ |
+ |\__ mddb2: High-memory DB server, Centos 6.3 (Supermicro custom-built, 64-core, 128GB RAM, 28TB HDD)
+ |   ++ 8-segment Greenplum parallel database
+ |
+  \__ mddb-gpu: High-density GPU server, Ubuntu 12.04 (Tyan custom-built, 12-core, 48GB RAM, 8 GPUs: 4xGTX580, 4xGTX480)
+
+
+To access these, first log in to damsel, and then the desired cluster node, e.g.:
+
+yna@tempest> ssh yna@damsl.cs.jhu.edu
+yna@damsel> ssh yna@qp5
+
+Important: when you log into damsl.cs.jhu.edu your home directory is by default at: /home/<username>
+This is *not* your network home drive, instead your network home is located at: /damsl/homes/<username>
+(your network home is available on all nodes).

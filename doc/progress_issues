@@ -1,0 +1,123 @@
+***********************What is done/known************************
+- Proposal slides: https://docs.google.com/presentation/d/1h4h_TNIQZaZh-JcU-jVzELl5TCOBfAzgW5o28ViknPg/edit#slide=id.ge104b1762_3_0
+- Proposal pdf: 
+https://www.overleaf.com/3313971tdmqqx#/9316616/
+
+- Log into damsl:
+ssh -i id_rsa bdslss15-xpjs@damsl.cs.jhu.edu
+
+- Location of the original data:
+/damsl/projects/MD/Simulations/bpti
+(the feature data are moved to the same folder with other data files)
+
+- The feature data are already split into types and converted to json files which is easy to be parsed as arrays.
+Location of the preprocessed data:
+/project/data
+It can be accessed through all working machines except the gateway damsl.
+In the folder /data, there are these files and folders: 
+chi1  chi1.json  chi2  chi2.json  hbonds  hbonds.json  rmsd  rmsd.json
+They four .json files are the four big arrays of all the data for each feature type.
+The others are folders that contain split arrays for each of the data point. 
+
+- The spark is setup on the cluster (see README for instructions)
+
+- This program has the following major parts: 
+Reference: project from last year https://github.com/arendu/Autoencoder-WordEmbeddings
+
+1. The neural network structure for the autoencoder. (This corresponds to NpLayers.py)
+This class is independent of data, so we may borrow it with little change. Keep in mind that they only implemented one hidden layer. If we need more (a “stacked” autoencoder), we’ll need to modify the code. 
+Javad suggested that we can also check the Scala version of autoencoder https://github.com/avulanov/spark/blob/autoencoder/mllib/src/main/scala/org/apache/spark/mllib/ann/Autoencoder.scala 
+which may be more robust. It’s also a good option if we can easily integrate it with our python program. (I know little about Scala so I’m not sure how easy it would be).
+It’s also possible that we’ll end up writing our own class of this neural network, and their code is only for reference. 
+
+2. Training the autoencoder in serial. (TrainSerial.py)
+It’s usually easier to start with a serial version and then parallelize it. We may also need to compare the speed and accuracy between the serial and parallel versions, so we’ll need this part anyway. 
+If the training is too slow for the serial version, we may try it on a small part of data to get it running, although the result is not expected to be good. 
+
+3. Training the autoencoder in parallel. (TrainSpark.py and TrainMultiprocess.py)
+The Scala code also contains training.
+There are some questions about how we are going to parallelize the training. Their project seems to use a synchronized updating, which takes the average of the parameters at each iteration. This can create many barriers that all nodes must wait for the slowest one at each iteration. I thought about the possibility of implementing the asynchronized updating as mentioned in the paper about ADAM, but it’s not trivial for Spark as we need to add an extra node to the architecture as a parameter server, and the IO cost can be large. Anyway, let’s focus on the synchronized updating first.
+
+4. Encoding: given one data point to the trained autoencoder, output the learned feature. (DecodeSerial.py and DecodeSpark.py) 
+After the autoencoder is trained, we need this part to extract features of the data that can be used later (for classification).
+This part can also be parallelized. Again, we can first try the serial version. 
+
+5. Data readers: convert the dcd/txt data files into arrays
+For their project, this is integrated into the training and encoding program. I prefer making it more OO, ie, write a separate model for dealing with the data so that all other parts can use it. Of course, whoever is writing the training or encoding module can also work on this. 
+And yes, we still need to ask or figure out how to read the dcd files.
+
+6. classifier for both the learned representation and manual features
+We can use existing classification scikit-learn packages.  
+
+7. Main script that put all these parts together.
+This can be done in the end. 
+
+
+***********************To Do************************
+On going or that can start immediately: 
+
+- [put your name here] The neural network structure for the autoencoder.
+- [put your name here] Training the autoencoder in serial.
+- [put your name here] Training the autoencoder in parallel. 
+- [put your name here] Encoding: given one data point to the trained autoencoder, output the learned feature. 
+- [put your name here] Data readers: convert the dcd/txt data files into arrays
+- [put your name here] classifier for both the learned representation and manual features
+- [put your name here] Main script that put all these parts together.
+
+Things to do next:
+
+- Run a serial version on a small sample of the protein data 
+- Run the parallelized version of SDAE on the trajectory(raw) data on Spark and do classification using the learned features
+- Run the classifier for the feature data and compare the results with using the learned features. 
+
+
+***********************Unresolved Issues/Bugs************************
+
+
+***********************Resolved Issues/Bugs************************
+- Error when submitting Spark jobs using the docker-cloudera-quickstart image on Docker: 
+JavaError: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.FileNotFoundException: /user/spark/applicationHistory/local-1447643424316.inprogress (No such file or directory)
+Solution: abandoned using docker-cloudera-quickstart.
+
+- Docker container quit unexpectedly using image sequenceiq/spark on 11/18. (It worked well on 11/17)
+Solution: don't use detached (-d) mode, use -it mode and exit with CTRL+P+Q
+
+
+***********************Unanswered Questions************************
+
+
+***********************Answered Questions************************
+- Can we access the feature data (which are stored in another server accessed by "ssh mddb2") at runtime without copying them to the local server? 
+A: no need. Just copied the feature data to the same folder of other data.
+
+
+
+***********************Reference and resources************************
+- auto-encoder for spark (MLlib, scala) 
+https://github.com/avulanov/spark/tree/autoencoder/mllib/src/main/scala/org/apache/spark/mllib/ann
+- DeepDist: a deep neural network for spark (python). But no implementation of auto-encoders
+https://github.com/dirkneumann/deepdist
+- Last year’s project on using Autoencoder for word-embeddings
+https://github.com/arendu/Autoencoder-WordEmbeddings
+
+
+
+***********************Description of data************************
+
+dcd: "Raw data”, trajectory files recording the coordinate of each atom evolving with time.
+
+states: all snapshots are labeled with one of the 5 states or in transition (considered to be 1 state)
+
+features: (extracted from dcd files using domain knowledge with MDAnalysis code http://www.mdanalysis.org)
+These features are strongly coupled.
+- chi1: some angel defined for the R structures. [0,180]
+- chi2: another angel defined for the R structures. Some R may not have this angel. [0,180]
+- hbonds: number of hydrogen bonds at a perticular position. {0,1,2,3…}
+- rmsd: root-mean-square distance of all the atoms w.r.t the corresponding atoms in the model structures of the 5 states. (smaller means more likely to be at that state but not accurate enough)
+
+About the feature files (from Javad's email)
+There are 4000 text files for features, which each is an snapshot for every 0.25 ms. Inside each file, there are 1000 snapshots for every 0.25 Micro seconds with 4 sets of features (RMSD, Chi1, Chi2, and Hbond). 
+On the other hand, there are 4125 labels for 5 stages corresponding to those 4000 feature files. Most probably, the first 4000 labels associate with the 4000 feature files. 
+Long story short, we decided to use each of the 4 feature sets (RMSD, Chi1, Chi2, and Hbond) separately with different AE and classification. Then we could compare the results with the ground-truth to see which feature works best. 
+
